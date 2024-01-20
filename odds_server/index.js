@@ -1,4 +1,18 @@
 const axios = require('axios');
+const mysql = require('mysql');
+
+var con = mysql.createConnection({
+    host: '127.0.0.1',
+    port: '3306',
+    user: 'root',
+    password: 'toor',
+    database: 'razrabotka'
+});
+
+con.connect(function(err) {
+  if (err) throw err;
+  console.log("Connected!");
+});
 
 sports = ['soccer_uefa_europa_league','soccer_uefa_euro_qualification','soccer_uefa_champs_league','icehockey_sweden_hockey_league','icehockey_nhl','basketball_nba','americanfootball_nfl'];
 
