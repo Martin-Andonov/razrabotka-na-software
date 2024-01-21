@@ -13,9 +13,12 @@ var con = mysql.createConnection({
     password: 'toor',
     database: 'razrabotka'
 });
-//here the outcome of matches will be determined by rng 
+//here the outcome of matches will not be determines or taken into affect
+//that means status tables won't be created for all placed bets 
 //in real world apication we will need to make request to the oddsApi to give us the result of the match
-//the outcome of matches will be calculated when user logs in
+//and calculate afterwards the wins of the user and calculate their new balance 
+
+//Note we are doing this beacuse the oddsapi historical odds and results are locked for obly paying users !!!!!
 
 function create_account(username, email, password, name,balance, res) {
     con.query("Select CustomerId FROM customer WHERE ScreenName = \'" + String(username) + "\'", function(err, result, fields) {
@@ -258,7 +261,7 @@ function placeBet(username,matchId,team,money,res)
                                         respons:"Successfully placed a bet!"
                                     })
                                 });
-                                
+
                             });
                         });
 

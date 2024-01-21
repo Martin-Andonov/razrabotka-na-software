@@ -1,4 +1,4 @@
-create database razrabotka;
+create database if not exists razrabotka;
 use razrabotka;
 
 CREATE TABLE `Customer` (
@@ -17,12 +17,12 @@ CREATE TABLE `Customer` (
 );
 
 CREATE TABLE `Bets` (
-    `BetID` int  NOT NULL ,
+    `BetID` int AUTO_INCREMENT NOT NULL ,
     `CustomerID` int  NOT NULL ,
     `money` int  NOT NULL ,
     -- if 0 not finished if 1 finished
     `BetStatus` boolean  NOT NULL ,
-    `BetResult` int  NOT NULL ,
+    `BetResult` int  NULL ,
     `Odds` float  NOT NULL ,
     PRIMARY KEY (
         `BetID`
@@ -30,7 +30,7 @@ CREATE TABLE `Bets` (
 );
 
 CREATE TABLE `Status` (
-    `OrderStatusID` int  NOT NULL ,
+    `OrderStatusID` int AUTO_INCREMENT  NOT NULL ,
     `Won` boolean  NOT NULL ,
     `Loss` boolean  NOT NULL ,
     `Push` boolean  NOT NULL ,

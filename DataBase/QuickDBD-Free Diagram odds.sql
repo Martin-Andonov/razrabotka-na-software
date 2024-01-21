@@ -1,5 +1,6 @@
-
+create database if not exists razrabotka;
 use razrabotka;
+
 
 CREATE TABLE `OddsTable` (
     `BetId` int AUTO_INCREMENT  NOT NULL ,
