@@ -175,6 +175,140 @@ function withdraw(username, money, res)
 }
 
 
+
+function placeBet(username,matchId,team,money,res)
+{
+    con.query("SELECT CustomerID FROM Customer WHERE ScreenName = '" + username + "';",function(err, result, fields){ 
+        
+        if (err) {
+            res.status(200).send({
+                respons: 'Internal error!'
+            })
+            throw err;
+        }
+        var customerid = result[0]["CustomerID"];
+        con.query("SELECT Balance FROM Customer WHERE CustomerID = '" +customerid + "';", function(err, result, fields) {
+        
+            if (err) {
+                res.status(200).send({
+                    respons: 'Internal error!'
+                })
+                throw err;
+            }
+            var newBalance = result[0]["Balance"] - money;
+            if(newBalance >= 0)
+            {
+                       
+                con.query("SELECT * FROM OddsTable WHERE BetId = " + matchId + ";",function(err, result, fields) {
+        
+                    if (err) {
+                        res.status(200).send({
+                            respons: 'Internal error!'
+                        })
+                        throw err;
+                    }
+                    
+                    if(result.length > 0)
+                    {
+                       if(team == 0 && result[0]["DrawOdds"] != null)
+                       {
+                        con.query("INSERT INTO Bets (CustomerID, money, BetStatus, BetResult, Odds) VALUES (" + customerid + "," + money +", 0, NULL," + result[0]["DrawOdds"] + ")",function(err, result, fields) {
+        
+                            if (err) {
+                                res.status(200).send({
+                                    respons: 'Internal error!'
+                                })
+                                throw err;
+                            }
+                            
+                             
+                            res.status(200).send({
+                                respons:"Successfully placed a bet!"
+                            })
+                        });
+
+                       }else if(team == 1)
+                       {
+                        con.query("INSERT INTO Bets (CustomerID, money, BetStatus, BetResult, Odds) VALUES (" + customerid + "," + money +", 0, NULL," + result[0]["HomeTeamOdds"] + ")",function(err, result, fields) {
+        
+                            if (err) {
+                                res.status(200).send({
+                                    respons: 'Internal error!'
+                                })
+                                throw err;
+                            }
+
+                            con.query("UPDATE Customer SET Balance = " + newBalance +" WHERE CustomerID = '" + customerid +"';", function(err, result, fields) {
+                                if (err) {
+                                    res.status(200).send({
+                                        respons: 'Internal error!'
+                                   })
+                                   throw err;
+                                }
+                
+                                con.query("UPDATE Customer SET Balance = " + newBalance +" WHERE CustomerID = '" + customerid +"';", function(err, result, fields) {
+                                    if (err) {
+                                        res.status(200).send({
+                                            respons: 'Internal error!'
+                                       })
+                                       throw err;
+                                    }
+                    
+                                    res.status(200).send({
+                                        respons:"Successfully placed a bet!"
+                                    })
+                                });
+                                
+                            });
+                        });
+
+                       }else if(team == 2)
+                       {
+                        con.query("INSERT INTO Bets (CustomerID, money, BetStatus, BetResult, Odds) VALUES (" + customerid + "," + money +", 0, NULL," + result[0]["AwayTeamOdds"] + ")",function(err, result, fields) {
+        
+                            if (err) {
+                                res.status(200).send({
+                                    respons: 'Internal error!'
+                                })
+                                throw err;
+                            }
+
+                            con.query("UPDATE Customer SET Balance = " + newBalance +" WHERE CustomerID = '" + customerid +"';", function(err, result, fields) {
+                                if (err) {
+                                    res.status(200).send({
+                                        respons: 'Internal error!'
+                                   })
+                                   throw err;
+                                }
+                
+                                res.status(200).send({
+                                    respons:"Successfully placed a bet!"
+                                })
+                            });
+                        });
+                       
+                       }else{
+                        res.status(200).send({
+                            respons:"Invalid team to bet on!"
+                        })
+                       }
+
+                    }else{
+                        res.status(200).send({
+                            respons:"There is no match with that id!"
+                        })
+                    }
+                });
+
+            }else{
+                res.status(200).send({
+                    respons:"There aren't enough money in the acount to complete the transaction!"
+                })
+            }
+        }); 
+    });
+}
+
 con.connect(function(err) {
     if (err) throw err;
     console.log("Connected!");
@@ -224,7 +358,7 @@ app.get('/', (req, res) => {
 
         if (whitelist.hasOwnProperty(req.ip)) 
         {
-            
+            placeBet(whitelist[req.ip],req.body["matchId"],req.body["team"],req.body["money"],res);
         } else 
         {
             res.status(200).send({
