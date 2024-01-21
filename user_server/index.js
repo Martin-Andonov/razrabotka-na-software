@@ -13,20 +13,21 @@ var con = mysql.createConnection({
     password: 'toor',
     database: 'razrabotka'
 });
+//here the outcome of matches will be determined by rng 
+//in real world apication we will need to make request to the oddsApi to give us the result of the match
+//the outcome of matches will be calculated when user logs in
 
-function create_account(username, email, password, name, res) {
-
-    con.query("Select UserId FROM userstable WHERE UserName = \'" + String(username) + "\'", function(err, result, fields) {
+function create_account(username, email, password, name,balance, res) {
+    con.query("Select CustomerId FROM customer WHERE ScreenName = \'" + String(username) + "\'", function(err, result, fields) {
         if (err) {
             res.status(200).send({
                 respons: 'Internal error!'
             })
             throw err;
         }
-        console.log(result.length)
         if(result.length == 0) 
         {
-            con.query("INSERT INTO UsersTable (UserName, HashedPassword, Email, Name) VALUES('" + username + "', '" + password + "', '" + email +"', '" + name + "');", function(err, result, fields) {
+            con.query("INSERT INTO customer (ScreenName, Password, Email, Name, Balance) VALUES('" + username + "', '" + password + "', '" + email +"', '" + name +  "'," +balance+ ");", function(err, result, fields) {
                 if (err) {
                     res.status(200).send({
                         respons: 'Internal error!'
@@ -47,7 +48,7 @@ function create_account(username, email, password, name, res) {
 }
 
 function log_in(username, password, req, res) {
-    con.query("SELECT HashedPassword FROM userstable WHERE UserName = \'" + String(username) + "\';", function(err, result, fields) {
+    con.query("SELECT Password FROM customer WHERE ScreenName = \'" + String(username) + "\';", function(err, result, fields) {
 
         if (err) {
             res.status(200).send({
@@ -55,7 +56,7 @@ function log_in(username, password, req, res) {
             })
             throw err;
         }
-        if (result[0]["HashedPassword"] == String(password)) {
+        if (result[0]["Password"] == String(password)) {
             console.log("login succsesgull!");
             res.status(200).send({
                 respons: 'Login successful'
@@ -69,6 +70,111 @@ function log_in(username, password, req, res) {
     });
 }
 
+function check_balance(username,res)
+{
+    con.query("SELECT Balance FROM Customer WHERE ScreenName = '" +username+"';", function(err, result, fields) {
+        if (err) {
+            res.status(200).send({
+                respons: 'Internal error!'
+            })
+            throw err;
+        }
+
+        res.status(200).send({
+            respons:result[0]
+        })
+    });
+}
+
+function deposit(username, money, res)
+{
+    con.query("SELECT Balance FROM Customer WHERE ScreenName = '" + username + "';", function(err, result, fields) {
+        
+        if (err) {
+            res.status(200).send({
+                respons: 'Internal error!'
+            })
+            throw err;
+        }
+        var newBalance = result[0]["Balance"] + money;
+        con.query("SELECT CustomerID FROM Customer WHERE ScreenName = '" + username + "';",function(err, result, fields){ 
+            
+            if (err) {
+                res.status(200).send({
+                    respons: 'Internal error!'
+                })
+                throw err;
+            }
+
+            con.query("UPDATE Customer SET Balance = " + newBalance +" WHERE CustomerID = '" + result[0]["CustomerID"] +"';", function(err, result, fields) {
+                if (err) {
+                    res.status(200).send({
+                        respons: 'Internal error!'
+                   })
+                   throw err;
+                }
+
+                 res.status(200).send({
+                    respons: "Balance update to " + newBalance
+                })
+            
+            });
+
+            
+        });
+    });
+}
+
+function withdraw(username, money, res)
+{
+    con.query("SELECT Balance FROM Customer WHERE ScreenName = '" + username + "';", function(err, result, fields) {
+        
+        if (err) {
+            res.status(200).send({
+                respons: 'Internal error!'
+            })
+            throw err;
+        }
+        var newBalance = result[0]["Balance"] - money
+        
+        if( newBalance >= 0)
+        {
+            con.query("SELECT CustomerID FROM Customer WHERE ScreenName = '" + username + "';",function(err, result, fields){ 
+                
+                if (err) {
+                    res.status(200).send({
+                        respons: 'Internal error!'
+                   })
+                   throw err;
+                }
+
+                con.query("UPDATE Customer SET Balance = " + newBalance +" WHERE CustomerID = '" + result[0]["CustomerID"] +"';", function(err, result, fields) {
+                    if (err) {
+                        res.status(200).send({
+                            respons: 'Internal error!'
+                       })
+                       throw err;
+                    }
+    
+                     res.status(200).send({
+                        respons: "Money withdrawn: " + money + " Balance update to " + newBalance
+                    })
+                
+                });
+    
+                
+            });
+
+        }else{
+            res.status(200).send({
+                respons:"There aren't enough money in the acount to complete the transaction!"
+            })
+        }
+        
+    });
+}
+
+
 con.connect(function(err) {
     if (err) throw err;
     console.log("Connected!");
@@ -81,8 +187,80 @@ app.listen(
 
 app.use(parser.json());
 
+
 app.get('/', (req, res) => {
-    console.log(req.body["command"])
+    
+    
+    if (req.body["command"] == "login") 
+    {
+
+        if (!whitelist.hasOwnProperty(req.ip)) 
+        {
+            log_in(req.body["username"], req.body["password"], req, res);
+        } else 
+        {
+            res.status(200).send({
+                respons: 'You are already logged in!'
+            })
+        }
+
+    } else if (req.body["command"] == "signin") 
+    {
+        create_account(req.body["username"],req.body["email"],req.body["password"],req.body["name"],req.body["balance"],res);
+
+    } else if (req.body["command"] == "checkBalance") 
+    {
+        if (whitelist.hasOwnProperty(req.ip)) 
+        {
+            check_balance(whitelist[req.ip],res)
+        } else 
+        {
+            res.status(200).send({
+                respons: "You need to login to check balance!"
+            })
+        }
+    } else if (req.body["command"] == "placeBet") 
+    {
+
+        if (whitelist.hasOwnProperty(req.ip)) 
+        {
+            
+        } else 
+        {
+            res.status(200).send({
+                respons: "You need to login to place a bet!"
+            })
+        }
+    } else if(req.body["command"] == "deposit")
+    {
+        if (whitelist.hasOwnProperty(req.ip)) 
+        {
+           deposit(whitelist[req.ip],req.body["money"],res);
+        } else 
+        {
+            res.status(200).send({
+                respons: "You need to login to deposit!"
+            })
+        }
+
+    }else if(req.body["command"] == "withdraw")
+    {
+        if (whitelist.hasOwnProperty(req.ip)) 
+        {
+            withdraw(whitelist[req.ip],req.body["money"],res);
+        } else 
+        {
+            res.status(200).send({
+                respons: "You need to login to cashout!"
+            })
+        }
+
+    }else 
+    {
+        res.status(200).send({
+            respons: "You have incorect command parameter!"
+        })
+    }
+
+
 });
-
-

@@ -1,13 +1,8 @@
-﻿-- Exported from QuickDBD: https://www.quickdatabasediagrams.com/
--- Link to schema: https://app.quickdatabasediagrams.com/#/d/oVecJj
--- NOTE! If you have used non-SQL datatypes in your design, you will have to change these here.
-
--- Modify this code to update the DB schema diagram.
--- To reset the sample schema, replace everything with
--- two dots ('..' - without quotes).
+create database razrabotka;
+use razrabotka;
 
 CREATE TABLE `Customer` (
-    `CustomerID` int  NOT NULL ,
+    `CustomerID` int AUTO_INCREMENT  NOT NULL ,
     `ScreenName` varchar(50)  NOT NULL ,
     `Balance` int  NOT NULL ,
     `Name` varchar(50)  NOT NULL ,
@@ -24,7 +19,7 @@ CREATE TABLE `Customer` (
 CREATE TABLE `Bets` (
     `BetID` int  NOT NULL ,
     `CustomerID` int  NOT NULL ,
-    `Amount` money  NOT NULL ,
+    `money` int  NOT NULL ,
     -- if 0 not finished if 1 finished
     `BetStatus` boolean  NOT NULL ,
     `BetResult` int  NOT NULL ,
@@ -50,3 +45,8 @@ REFERENCES `Customer` (`CustomerID`);
 ALTER TABLE `Bets` ADD CONSTRAINT `fk_Bets_BetResult` FOREIGN KEY(`BetResult`)
 REFERENCES `Status` (`OrderStatusID`);
 
+INSERT INTO Customer ( ScreenName, Balance, Name, Email, Password)
+VALUES
+    ( 'user1', 1000, 'John Doe', 'john.doe@example.com', 'password123'),
+    ( 'user2', 500, 'Jane Smith', 'jane.smith@example.com', 'securepassword'),
+    ( 'user3', 1500, 'Bob Johnson', 'bob.johnson@example.com', 'pass123word');
